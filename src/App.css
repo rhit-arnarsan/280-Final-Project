@@ -18,15 +18,20 @@ p {
 }
 
 html {
-  font-size: 16px;
+  font-size: 14px;
 }
 
-.fx-hr {
+.todo-item {
   display: flex;
   flex-direction: row;
   align-items: center;
+  margin-left: 1.5em;
 }
 
 .strike {
-  text-decoration: line-through;
+  text-decoration:line-through;
+}
+
+h1 {
+  font-size: 26px;
 }

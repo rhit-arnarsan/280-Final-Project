@@ -6,23 +6,28 @@ import { Checkbox, TextField } from '@mui/material';
 
 const days_of_week = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
-
-function TodoLine() {
-    const [done, setDone] = useState(false);
-
+function TodoLine(addLine) {
+    const [done, setDone] = useState(true);
     const input =  (
         <TextField 
         InputProps={{ disableUnderline: true }}
         placeholder="WRITE Your TODO here"
         variant="standard"
+        // value={""}
         className={done ? "strike" : ""}
+        onKeyDown={ (e) => (e.key === 'Enter') ? addLine() : undefined}
         />
     );
 
     return (
-        <div className="fx-hr">
+        <div className="todo-item">
             <Checkbox size="small" checked={done} 
-            onChange={(event) => setDone(event.target.checked)} />
+            sx={{
+                '&.Mui-checked': { background: '#ffffff00', },
+                padding: '3px'
+            }}
+            onChange={(event) => setDone(event.target.checked)} 
+            />
             {input}
         </div>
     );
@@ -36,6 +41,20 @@ export function Day(name) {
         </div>
     );
 }
+
+// format will be
+/*
+{
+    "monday": [
+        {
+            "task": "<task here>",
+            "done": false | true
+        }
+    ],
+    "tuesday": ...
+}
+
+*/
 
 // name is a string
 export function Week(name) {
