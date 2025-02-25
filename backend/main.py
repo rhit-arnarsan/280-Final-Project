@@ -15,22 +15,24 @@ class Todo:
         self.text = text
         self.done = done
         self.level = level
-
+    
+    def fromDict(input: dict):
+        return Todo(
+            input["text"],
+            input["done"],
+            input["level"],
+        )
+    
+    def fromJSON(input: str):
+        got = json.loads(input)
+        return Todo.fromDict(got)
+ 
     def toJSON(self):
         return json.dumps({
             "text": self.text,
             "done": self.done,
             "level": self.level
-        })
-    
-    def fromJSON(input):
-        got = json.loads(input)
-        return Todo(
-            got["text"],
-            got["done"],
-            got["level"],
-        )
-        
+        })       
         
 
 
@@ -40,7 +42,7 @@ Day = list[Todo]
 
 import pickledb
 from flask import Flask, request
-from datetime import date
+from datetime import date, datetime
 
 
 
@@ -61,9 +63,16 @@ DB design:
     ]
     ...
 }
+....
 
 
-TODO hash passwords
+"__sessions__": {
+    <cookie>: {
+        "username": <username>,
+        "expires": <datetime isoformat>
+    }
+}
+
 """
 
 class NoSuchUser(Exception):
@@ -71,6 +80,8 @@ class NoSuchUser(Exception):
 
 
 class Layer:
+    SPECIAL_KEYS = {"settings", "secret"}
+
     def __init__(self, db_name: str):
         self.db = pickledb.PickleDB(db_name)
 
@@ -105,7 +116,7 @@ class Layer:
                 "lightmode": True
             },
             "secret": {
-                "password": password
+                "password": password,
             }
         })
         return None if success else "Failed to write to DB"
@@ -121,7 +132,7 @@ class Layer:
 
         return None
 
-    def update_data(self, username: str, day: str, data: str) -> str | None:
+    def update_day(self, username: str, day: str, data: str) -> str | None:
         " returns None if no error otherwise string"
         user = self.get_user(username)
         try:
@@ -138,34 +149,74 @@ class Layer:
 
         return None
 
+    def get_day(self, username: str, day: str) -> Todo:
+        try:
+            formatted_day = date.fromisoformat(day).isoformat()
+        except Exception:
+            return f"Invalid day: \"{day}\""
         
-        
-        
+        try:
+            todo = Todo.fromJSON(self.get_user(username)[formatted_day])
+        except NoSuchUser as nsu:
+            raise nsu
+        except Exception:
+            return f"Invalid TODO data"
+        return todo
+    
+    def get_all_days(self, username: str) -> dict[date, Todo]:
+        result = {}
+        for k, v in self.get_user(username):
+            if k in Layer.SPECIAL_KEYS:
+                continue
+            result[date.fromisoformat(k)] = Todo.fromDict(v)
+        return result
+    
+"""
+API design:
 
+====== Login Related ======
+/api/login             {username: <username>, psasword: <password>}
+/api/register          {username: <username>, psasword: <password>}
+/api/logout            {} // uses the users' cookie to identify who is logging out and clears their session from the backend
 
+====== General ======
+These generally don't take in a username as things are validated by the users'
+cookie which serves as the user identifier
 
+=== Core feature ===
+/api/update-day        {day: <date>, todos: [<TODOjson>, <TODOjson>]}
+/api/get-day           {day: <date>}
+/api/get-days-inrange  {start: <date>, end: <date>}
 
+=== Secondary Feature ===
+/api/get-settings      {}
+/api/update-settings      {<updated-field>: <new-value>, ...}
+
+"""
+class Server:
+    def __init__(self, layer: Layer):
+        self.layer = layer
+
+    def start(self):
+        pass
 
 
 
 
 app = Flask(__name__)
 
-"""
-API design:
 
 
-/api/login             {username: <username>, psasword: <password>}
-/api/register          {username: <username>, psasword: <password>}
-
-/api/update/<day>      [<TODOjson>, <TODOjson>]
-
-"""
-
-@app.route("/api/update/<day>", methods=["POST"])
+@app.route("/api/update-day/<day>", methods=["POST"])
 def update(day):
     print(request.get_data())
     return 'abc'
+
+@app.route("/api/get-range", methods=["POST"])
+def update(day):
+    print(request.get_data())
+    return 'abc'
+
 
 
 # app.run(debug=True)
