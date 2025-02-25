@@ -2,20 +2,10 @@
 
 """
 Plan:
-I did some research and pickledb is a key value store.
-This means a nice clean nested json style storage is the wrong approach.
-Although for this application it proably does not matter
 
-This way the forntend will not dump the entire db for every update either
+This way the forntend will not dump the entire db for every update.
 
 so keys will be of the form:
-
-Angle brackets not included
-
-basically we store each day
-<YYYY-mm-dd> = list[Todo]
-
-
 """
 
 import json
@@ -43,18 +33,44 @@ from datetime import date
 
 
 # Open DB
-db = pickledb.PickleDB("todos.db")
+
+"""
+DB design:
+
+"user123": {
+    "settings": {
+        "password": "XXXXXX",
+        "lightmode": false
+    },
+    "1970-1-1": [
+        {"task": "wash dishes", "done": false}
+    ]
+    ...
+}
 
 
-def setDay(day: str, value: Day):
-    real_day = date.fromisoformat(day)
-    key = real_day.isoformat()
-    db.set(key) = 
+TODO hash passwords
+"""
 
-    
+class Layer:
+    def __init__(self, db_name: str):
+        self.db = pickledb.PickleDB(db_name)
 
+    def _username_valid(self, username: str) -> bool:
+        return username.isalnum()
 
+    def register(self, username: str, password: str) -> str | None:
+        " returns None if no error otherwise string"
 
+        if not self._username_valid(username):
+            return f"invalid username: {username}"
+        
+        if self.db.get(username):
+            return f"user: {username} already exists"
+        
+        self.db.set(username, {})
+
+   
 
 
 
@@ -67,12 +83,18 @@ app = Flask(__name__)
 """
 API design:
 
+
+/api/login             {username: <username>, psasword: <password>}
+/api/register          {username: <username>, psasword: <password>}
+
+/api/update/<day>      [<TODOjson>, <TODOjson>]
+
 """
 
 @app.route("/api/update/<day>", methods=["POST"])
-def update():
+def update(day):
     print(request.get_data())
     return 'abc'
 
 
-app.run(debug=True)
+# app.run(debug=True)
