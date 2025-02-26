@@ -3,7 +3,7 @@ import { Link } from 'react-router';
 import { Box, TextField, FormGroup, Typography, Button } from '@mui/material';
 
 
-export function Login() {
+export function Register() {
     return (
         <Box>
             <FormGroup

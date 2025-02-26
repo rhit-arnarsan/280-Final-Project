@@ -4,6 +4,7 @@ import './App.css'
 
 import { Week } from './components/Week.jsx';
 import { Login } from './components/Login.jsx';
+import { Register } from './components/Register.jsx';
 import { TopBar } from './components/TopBar.jsx';
 
 function App() {
