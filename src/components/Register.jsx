@@ -1,6 +1,6 @@
 import { Link } from 'react-router';
 
-import { Box, Button, TextField, FormGroup, Typography } from '@mui/material';
+import { Box, TextField, FormGroup, Typography, Button } from '@mui/material';
 
 
 export function Login() {
@@ -12,7 +12,8 @@ export function Login() {
                 <Typography variant="h6">Login</Typography>
                 <TextField label="Username" required></TextField>
                 <TextField label="Password" required></TextField>
-                <Button>Login</Button>
+                <TextField label="Password Again" required></TextField>
+                <Button>Register</Button>
             </FormGroup>
             <p>Don't have an account? <Link to={{pathname: "/register"}}>Register</Link></p>
         </Box>
