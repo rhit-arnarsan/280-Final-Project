@@ -41,12 +41,10 @@ Day = list[Todo]
 
 
 import pickledb
-from flask import Flask, request
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
-
-
-# Open DB
+import random
+import base64
 
 """
 DB design:
@@ -76,6 +74,9 @@ DB design:
 """
 
 class NoSuchUser(Exception):
+    pass
+
+class SessionExpired(Exception):
     pass
 
 
@@ -120,33 +121,57 @@ class Layer:
             }
         })
         return None if success else "Failed to write to DB"
-    
+
+    def remove_all_sessions(self, for_user: str):
+        sessions = self.db.get("__sessions__")
+        for k, v in sessions.items():
+            if v["username"] == for_user:
+                del sessions[k]
+
+    def _add_session(self, for_user: str, invalidate_other_user_sessions: bool = True, lasts: timedelta = timedelta(hours=1)) -> str:
+        sessions = self.db.get("__sessions__")
+        if invalidate_other_user_sessions:
+            self.remove_all_sessions(for_user)
+
+        cookie = base64.b64encode(random.randbytes(64))
+
+        sessions[cookie] = {
+            "username": for_user,
+            "expires": (datetime.now() + lasts).isoformat()
+        }
+        return cookie
+
+    def use_session(self, cookie: str) -> str:
+        " returns username of the owner of the session, only if it is expired "
+        sessions = self.db.get("__sessions__")
+        if cookie not in sessions:
+            raise SessionExpired("No session: " + cookie)
+        
+        session_data = sessions[cookie]
+        if "expires" not in session_data or datetime.now() >= datetime.fromisoformat(session_data["expires"]):
+            return SessionExpired("Expired: " + cookie)
+        return session_data["username"]
+
     def login(self, username: str, password: str) -> str | None:
-        # always same error message for security or smth
-        error = "username or password wrong"
+        # returns cookie or None for error
 
         try:
             self.user_secret(username)["password"] = password
         except Exception:
-            return error
+            return None
 
-        return None
+        # create session
+        return self._add_session(username)
 
-    def update_day(self, username: str, day: str, data: str) -> str | None:
+    def update_day(self, username: str, day: str, data: list[Todo]) -> str | None:
         " returns None if no error otherwise string"
         user = self.get_user(username)
         try:
             formatted_day = date.fromisoformat(day).isoformat()
         except Exception:
             return f"Invalid day: \"{day}\""
-        
-        try:
-            todo = Todo.fromJSON(data)
-        except Exception:
-            return f"Invalid TODO data"
 
-        user[formatted_day] = todo.toJSON()
-
+        user[formatted_day] = data
         return None
 
     def get_day(self, username: str, day: str) -> Todo:
@@ -184,39 +209,103 @@ These generally don't take in a username as things are validated by the users'
 cookie which serves as the user identifier
 
 === Core feature ===
-/api/update-day        {day: <date>, todos: [<TODOjson>, <TODOjson>]}
-/api/get-day           {day: <date>}
-/api/get-days-inrange  {start: <date>, end: <date>}
+/api/update-day        {day: <date>, todos: [<TODOjson>, <TODOjson>]} -> {error: null}
+/api/get-day           {day: <date>} -> {error: null, data: <todo.toJSON()>}
+/api/get-days-inrange  {start: <date>, end: <date>} -> {error: null, data: {<date>: <todo.toJSON(), ...>}} // [start, end) inclusivity
 
 === Secondary Feature ===
 /api/get-settings      {}
 /api/update-settings      {<updated-field>: <new-value>, ...}
 
 """
-class Server:
-    def __init__(self, layer: Layer):
-        self.layer = layer
 
-    def start(self):
-        pass
+import flask
+from flask import Flask, request
 
 
+def error(msg: str | None, other_info: dict = {}):
+    assert("error" not in other_info)
+    result = other_info.copy()
+    result["error"] = msg
+    return json.dumps(result)
 
+def noerror(other_info: dict = {}):
+    return error(None, other_info)
 
+layer = Layer("temp.db")
 app = Flask(__name__)
 
+"""
+====== Login Related ======
+"""
+
+@app.route("/api/login", methods=["POST"])
+def login():
+    j = request.json
+    res = layer.login(j["username"], j["password"])
+    if res == None:
+        return error("no username or password")
+    return noerror({"cookie": res})
+
+@app.route("/api/register", methods=["POST"])
+def register():
+    j = request.json
+    res = layer.register(j["username"], j["password"])
+    if res != None:
+        return error(res)
+    return noerror()
+
+@app.route("/api/logout", methods=["POST"])
+def logout():
+    whoami = layer.use_session(request.cookies["session"])
+    layer.remove_all_sessions(whoami)
+    return noerror()
+
+"""
+====== Core feature ======
+"""
+@app.route("/api/update-day", methods=["POST"])
+def update_day():
+    whoami = layer.use_session(request.cookies["session"])
+    d = date.fromisoformat(request.json["day"])
+    todos = [Todo.fromDict(i) for i in request.json["todos"]]
+    layer.update_day(whoami, d, todos)
+    return noerror()
+
+@app.route("/api/get-day", methods=["POST"])
+def get_day():
+    whoami = layer.use_session(request.cookies["session"])
+    d = date.fromisoformat(request.json["day"])
+    result = layer.get_day(whoami, d)
+    return noerror({"data": result})
+
+@app.route("/api/get-day-inrange", methods=["POST"])
+def get_dat_in_range():
+    whoami = layer.use_session(request.cookies["session"])
+    start = date.fromisoformat(request.json["start"])
+    end   = date.fromisoformat(request.json["end"])
+    result = {k:v for k, v in layer.get_all_days(whoami).items() if start <= k < end}
+    return noerror({"data": result})
+
+"""
+====== Secondary Feature ======
+"""
+@app.route("/api/get-settings", methods=["POST"])
+def get_dat_in_range():
+    whoami = layer.use_session(request.cookies["session"])
+    layer.user_settings(whoami)
+    return noerror({"data": layer})
+
+@app.route("/api/update-settings", methods=["POST"])
+def get_dat_in_range():
+    whoami = layer.use_session(request.cookies["session"])
+    assert("error" not in request.json)
+    layer.user_settings(whoami).update(request.json)
+    return noerror()
 
 
-@app.route("/api/update-day/<day>", methods=["POST"])
-def update(day):
-    print(request.get_data())
-    return 'abc'
-
-@app.route("/api/get-range", methods=["POST"])
-def update(day):
-    print(request.get_data())
-    return 'abc'
 
 
 
-# app.run(debug=True)
+
+app.run(debug=False)
