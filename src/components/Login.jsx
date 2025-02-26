@@ -11,7 +11,7 @@ export function Login() {
             >
                 <Typography variant="h6">Login</Typography>
                 <TextField label="Username" required></TextField>
-                <TextField label="Password" required></TextField>
+                <TextField type="password"  label="Password" required></TextField>
                 <Button>Login</Button>
             </FormGroup>
             <p>Don't have an account? <Link to={{pathname: "/register"}}>Register</Link></p>
