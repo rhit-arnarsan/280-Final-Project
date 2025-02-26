@@ -280,7 +280,7 @@ def get_day():
     return noerror({"data": result})
 
 @app.route("/api/get-day-inrange", methods=["POST"])
-def get_dat_in_range():
+def get_data_in_range():
     whoami = layer.use_session(request.cookies["session"])
     start = date.fromisoformat(request.json["start"])
     end   = date.fromisoformat(request.json["end"])
@@ -291,13 +291,13 @@ def get_dat_in_range():
 ====== Secondary Feature ======
 """
 @app.route("/api/get-settings", methods=["POST"])
-def get_dat_in_range():
+def get_settings():
     whoami = layer.use_session(request.cookies["session"])
     layer.user_settings(whoami)
     return noerror({"data": layer})
 
 @app.route("/api/update-settings", methods=["POST"])
-def get_dat_in_range():
+def update_settings():
     whoami = layer.use_session(request.cookies["session"])
     assert("error" not in request.json)
     layer.user_settings(whoami).update(request.json)
