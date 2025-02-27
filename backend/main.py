@@ -85,6 +85,7 @@ class Layer:
 
     def __init__(self, db_name: str):
         self.db = pickledb.PickleDB(db_name)
+        self.db["__sessions__"]  = {}
 
     def username_valid(self, username: str) -> bool:
         return username.isalnum()
@@ -133,7 +134,7 @@ class Layer:
         if invalidate_other_user_sessions:
             self.remove_all_sessions(for_user)
 
-        cookie = base64.b64encode(random.randbytes(64))
+        cookie = str(base64.b64encode(random.randbytes(64)))
 
         sessions[cookie] = {
             "username": for_user,
@@ -244,11 +245,12 @@ app = Flask(
 """
 
 @app.route("/api/login", methods=["POST"])
+@flask_cors.cross_origin()
 def login():
     j = request.json
     res = layer.login(j["username"], j["password"])
     if res == None:
-        return error("no username or password")
+        return error("wrong username or password")
     return noerror({"cookie": res})
 
 @app.route("/api/register", methods=["POST"])
@@ -266,6 +268,7 @@ def register():
     return noerror() 
 
 @app.route("/api/logout", methods=["POST"])
+@flask_cors.cross_origin()
 def logout():
     whoami = layer.use_session(request.cookies["session"])
     layer.remove_all_sessions(whoami)
@@ -275,6 +278,7 @@ def logout():
 ====== Core feature ======
 """
 @app.route("/api/update-day", methods=["POST"])
+@flask_cors.cross_origin()
 def update_day():
     whoami = layer.use_session(request.cookies["session"])
     d = date.fromisoformat(request.json["day"])
@@ -283,6 +287,7 @@ def update_day():
     return noerror()
 
 @app.route("/api/get-day", methods=["POST"])
+@flask_cors.cross_origin()
 def get_day():
     whoami = layer.use_session(request.cookies["session"])
     d = date.fromisoformat(request.json["day"])
@@ -290,6 +295,7 @@ def get_day():
     return noerror({"data": result})
 
 @app.route("/api/get-day-inrange", methods=["POST"])
+@flask_cors.cross_origin()
 def get_data_in_range():
     whoami = layer.use_session(request.cookies["session"])
     start = date.fromisoformat(request.json["start"])
@@ -301,12 +307,14 @@ def get_data_in_range():
 ====== Secondary Feature ======
 """
 @app.route("/api/get-settings", methods=["POST"])
+@flask_cors.cross_origin()
 def get_settings():
     whoami = layer.use_session(request.cookies["session"])
     layer.user_settings(whoami)
     return noerror({"data": layer})
 
 @app.route("/api/update-settings", methods=["POST"])
+@flask_cors.cross_origin()
 def update_settings():
     whoami = layer.use_session(request.cookies["session"])
     assert("error" not in request.json)
@@ -315,6 +323,7 @@ def update_settings():
 
 
 @app.route("/<any>", methods=["GET"])
+@flask_cors.cross_origin()
 def serve_files(any):
     return open("dist/index.html").read()
 
