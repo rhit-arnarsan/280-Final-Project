@@ -134,7 +134,7 @@ class Layer:
         if invalidate_other_user_sessions:
             self.remove_all_sessions(for_user)
 
-        cookie = str(base64.b64encode(random.randbytes(64)))
+        cookie = base64.b64encode(random.randbytes(64)).decode("utf-8")
 
         sessions[cookie] = {
             "username": for_user,
@@ -225,20 +225,37 @@ import flask_cors
 from flask import Flask, request
 
 
-def error(msg: str | None, other_info: dict = {}):
-    assert("error" not in other_info)
-    result = other_info.copy()
-    result["error"] = msg
-    return json.dumps(result)
 
-def noerror(other_info: dict = {}):
-    return error(None, other_info)
 
 layer = Layer("temp.db")
 app = Flask(
     __name__,
     static_url_path='/', # correct
     static_folder='dist/')
+
+def get_session():
+    if "session" in request.cookies:
+        return request.cookies["session"]
+    raise Exception("adsf")
+
+def quick_response(a):
+    response = flask.Response(a)
+    # response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers.add('Content-Type', 'application/json')
+    response.headers.add('Accept', 'application/json')
+    return response
+
+def error(msg: str | None, other_info: dict = {}):
+    if not isinstance(other_info, dict):
+        other_info = {}
+    if "error" in other_info:
+        return quick_response(json.dumps({"error":f"response contained invalid error param: {other_info}"}))
+    result = other_info.copy()
+    result["error"] = msg
+    return quick_response(json.dumps(result))
+
+def noerror(other_info: dict = {}):
+    return error(None, other_info)
 
 """
 ====== Login Related ======
@@ -259,13 +276,8 @@ def register():
     j = json.loads(request.get_data())
     res = layer.register(j["username"], j["password"])
     if res != None:
-        response = flask.Response(res, mimetype="application/json")
-    else:
-        response = flask.Response(noerror())
-    response.headers.add('Access-Control-Allow-Origin', '*')
-    response.headers.add('Content-Type', 'application/json')
-    response.headers.add('Accept', 'application/json')
-    return noerror() 
+        return error(res)
+    return noerror()
 
 @app.route("/api/logout", methods=["POST"])
 @flask_cors.cross_origin()
