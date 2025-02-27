@@ -45,6 +45,7 @@ import pickledb
 from datetime import date, datetime, timedelta
 
 import random
+from threading import Thread, Lock
 import base64
 
 """
@@ -85,8 +86,10 @@ class Layer:
     SPECIAL_KEYS = {"settings", "secret"}
 
     def __init__(self, db_name: str):
+        self.lock = Lock() # this is an attempt the db not saving under many requests
         self.db = pickledb.PickleDB(db_name)
         self.db["__sessions__"]  = {}
+        self.save()
 
     def username_valid(self, username: str) -> bool:
         return username.isalnum()
@@ -98,6 +101,11 @@ class Layer:
         if not self.user_exists(username):
             return NoSuchUser(username)
         return self.db.get(username)
+    
+    def save(self):
+        with self.lock:
+            assert(self.db.save())
+        
     
     def user_settings(self, username: str) -> dict:
         return self.get_user(username)["settings"]
@@ -122,7 +130,6 @@ class Layer:
                 "password": password,
             }
         })
-        self.db.save()
         return None if success else "Failed to write to DB"
 
     def remove_all_sessions(self, for_user: str):
@@ -130,7 +137,7 @@ class Layer:
         cpy = {k:v for k, v in sessions.items() if v["username"] != for_user}
         sessions.clear()
         sessions.update(cpy)
-        self.db.save()
+        self.save()
 
     def _add_session(self, for_user: str, invalidate_other_user_sessions: bool = True, lasts: timedelta = timedelta(hours=1)) -> str:
         sessions = self.db.get("__sessions__")
@@ -167,13 +174,12 @@ class Layer:
 
         # create session
         res = self._add_session(username)
-        self.db.save()
+        self.save()
         return res
 
     def update_day(self, username: str, day: str, data: list[Todo]) -> str | None:
         " returns None if no error otherwise string"
         user = self.get_user(username)
-        print("|||||||||")
         try:
             formatted_day = day.isoformat()
         except Exception as e:
@@ -181,9 +187,7 @@ class Layer:
             return f"Invalid day: \"{day}\""
 
         user[formatted_day] = [i.toJSON() for i in data]
-        print(user)
-        print("|||||||||")
-        self.db.save()
+        print(self.db.location)
         return None
 
     def get_day(self, username: str, day: str) -> Todo:
@@ -193,7 +197,6 @@ class Layer:
             return "Invalid day: \"{day}\""
         
         todos = self.get_user(username)[formatted_day]
-        print("-----", todos)
         # try:
         #     # todos = [Todo.fromDict(i) for i in todos]
         # except NoSuchUser as nsu:
@@ -317,11 +320,10 @@ def logout():
 def update_day():
     whoami = layer.use_session(get_session())
     j = json.loads(request.get_data())
-    print(j)
     d = date.fromisoformat(j["day"])
     todos = [Todo.fromDict(i) for i in j["todos"]]
     layer.update_day(whoami, d, todos)
-    layer.dump()
+    # layer.dump()
     return noerror()
 
 @app.route("/api/get-day", methods=["POST"])
