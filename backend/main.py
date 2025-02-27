@@ -28,11 +28,11 @@ class Todo:
         return Todo.fromDict(got)
  
     def toJSON(self):
-        return json.dumps({
+        return {
             "text": self.text,
             "finished": self.done,
             # "level": self.level
-        })       
+        }       
         
 
 
@@ -172,13 +172,16 @@ class Layer:
     def update_day(self, username: str, day: str, data: list[Todo]) -> str | None:
         " returns None if no error otherwise string"
         user = self.get_user(username)
+        print("|||||||||")
         try:
-            formatted_day = date.fromisoformat(day).isoformat()
-        except Exception:
+            formatted_day = day.isoformat()
+        except Exception as e:
+            print(e)
             return f"Invalid day: \"{day}\""
 
-        user[formatted_day] = data
+        user[formatted_day] = [i.toJSON() for i in data]
         print(user)
+        print("|||||||||")
         self.db.save()
         return None
 
@@ -203,7 +206,11 @@ class Layer:
                 continue
             result[date.fromisoformat(k)] = Todo.fromDict(v)
         return result
-    
+
+    def dump(self):
+        for key in self.db.all():
+            print(key, self.db.get(key))
+
 """
 API design:
 
@@ -310,13 +317,15 @@ def update_day():
     d = date.fromisoformat(j["day"])
     todos = [Todo.fromDict(i) for i in j["todos"]]
     layer.update_day(whoami, d, todos)
+    layer.dump()
     return noerror()
 
 @app.route("/api/get-day", methods=["POST"])
-@flask_cors.cross_origin()
+@flask_cors.cross_origin(supports_credentials=True)
 def get_day():
     whoami = layer.use_session(get_session())
-    d = date.fromisoformat(request.json["day"])
+    j = json.loads(request.get_data())
+    d = date.fromisoformat(j["day"])
     result = layer.get_day(whoami, d)
     return noerror({"data": result})
 
