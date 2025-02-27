@@ -25,7 +25,8 @@ export function Login() {
             return
         }
 
-        document.cookie = response.cookie;
+        document.cookie = "session="+response.cookie;
+        console.log("here")
         
         navigate("/todos", {replace: true})
     };

@@ -33,7 +33,7 @@ export function TopBar() {
 
     return (
         <AppBar>
-            <Toolbar sx={{ minwidth: "100%" }}>
+            <Toolbar sx={{ width: "100%", "boxSizing": "content-box" }}>
                 <Typography variant="h5">
                     Todo
                 </Typography>
@@ -45,8 +45,8 @@ export function TopBar() {
                         <Menu
                             anchorEl={menuAnchor}
                             open={Boolean(menuOpen)}>
-                            <MenuItem onClick={logout()}>Light / Dark Mode</MenuItem>
-                            <MenuItem onClick={logout()}>Logout</MenuItem>
+                            <MenuItem onClick={() => 1}>Light / Dark Mode</MenuItem>
+                            <MenuItem onClick={logout}>Logout</MenuItem>
                         </Menu>
                     </IconButton>
                 </Box>

@@ -1,8 +1,8 @@
 import { useState } from 'react'
 
-import { Checkbox, TextField } from '@mui/material';
+import { Button, Checkbox, TextField } from '@mui/material';
 
-const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const days_of_week = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
 class weekHolder {
     constructor(start, end) {
@@ -43,17 +43,24 @@ class weekHolder {
     async getData() {
         const x = await fetch("http://localhost:5000/api/get-days-inrange", {
             body: JSON.stringify({
-                startDate: this.startDate.toISOString(),
-                endDate: this.endDate.toISOString(),
+                start: this.startDate.toISOString().slice(0, 10),
+                end: this.endDate.toISOString().slice(0, 10),
             }),
+            credentials: 'include',
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+            }
 
         }).then((i) => i.json());
         console.log(x);
+        return x;
     }
 
 }
 
-function dayToWeek(day) {
+export function dayToWeek(day) {
     let start = new Date(day);
     while (start.getDay() != 0) {
         start.setDate(start.getDate() - 1);
@@ -70,25 +77,25 @@ console.log(dayToWeek(new Date()).getNextNWeeks(9));
 console.log(dayToWeek(new Date()).toListOfDays())
 
 
-function TodoLine(addLine) {
-    const [done, setDone] = useState(true);
+function TodoLine(index, addLine, valueDefault, doneDefault, passUp, remove) {
+    const [val, setVal] = useState(valueDefault);
+    const [done, setDone] = useState(doneDefault);
     
     const input =  (
         <TextField 
         InputProps={{ disableUnderline: true }}
         placeholder="WRITE Your TODO here"
         variant="standard"
-        // value={""}
+        value={val}
         className={done ? "strike" : ""}
-        onKeyDown={ (e) => (e.key === 'Enter') ? addLine() : undefined}
+        onChange={(e) => {
+            setVal(e.target.value);
+            passUp(index, e.target.value, done)
+        }}
+        onKeyDown={ (e) => (e.key === 'Enter') ? addLine(index) : undefined}
         />
-    );
 
-    currDate = new Date();
-    dayOfWeek = daysOfWeek[currDate.getDay()];
-    month = date.getMonth() + 1; // 0-based months
-    day = currDate.getDate();
-    year = date.getFullYear();
+    );
 
     return (
         <div className="todo-item">
@@ -97,24 +104,58 @@ function TodoLine(addLine) {
                 '&.Mui-checked': { background: '#ffffff00', },
                 padding: '3px'
             }}
-            onChange={(event) => setDone(event.target.checked)} 
+            onChange={(event) => {
+                setDone(event.target.checked)
+                passUp(index, val, event.target.checked)
+            }}
             />
             {input}
+            <Button
+            onClick={() => remove(index)}>
+                Delete
+            </Button>
         </div>
     );
 }
 
-export function Day(name) {
-    currDate = new Date();
-    dayOfWeek = daysOfWeek[currDate.getDay()];
-    month = date.getMonth() + 1; // 0-based months
-    day = currDate.getDate();
-    year = date.getFullYear();
+export function Day(name, date) {
+    const [todos, setTodos] = useState([{value: "", done: false}]) //[...existing, {value: "", done: false}])
+
+    const sT = (x) => {
+        if (typeof x != "object") {
+            console.trace("asdf")
+            console.log("x ", x)
+        }
+        setTodos(x)
+    }
+    const update = (i, value, done) => {
+        sT((x) => window.structuredClone(x).map((todo, index) => {
+            return (i == index) ? {value: value, done: done} : todo
+        }))
+        console.log(name, todos)
+    };
+
+    const remove = async (i) => {
+        
+        // sT((x) => x.filter((_, index) => index !== i));
+        const temp = window.structuredClone(todos).filter((_, index) => index != i)
+        console.log("temp")
+        sT(temp);
+        // const got = [...todos.slice(0, i), ...todos.slice(i)];
+    }
+
+    const add = (i) => {
+        sT([...todos.slice(0, i+1), {value: "", done: false}, ...todos.slice(i)]);
+        // const got = [...todos.slice(0, i), ...todos.slice(i)];
+    }
 
     return (
         <div>
-            <p>{name}</p>
-            {TodoLine()}
+            <p alt={date.toISOString().slice(0,10)}>{name}</p>
+            {
+                todos.map((todo, i) => 
+                    TodoLine(i, add, todo.value, todo.done, update, remove)) 
+            }
         </div>
     );
 }
@@ -130,15 +171,17 @@ export function Day(name) {
     ],
     "tuesday": ...
 }
-
 */
 
+
 // name is a string
-export function Week(name) {
+export function Week(name, weekHolder) {
+    weekHolder.getData();
     return (
         <div className="week">
             <h1 id={name}>{name}</h1>
-            {/* {days_of_week.map((i) => Day(i))} */}
+            {/* {weekHolder.toListOfDays().map((day, i) => Day(days_of_week[i], day, [{value:"asdf", done: true}]))} */}
+            {Day("TestDay", new Date(), [{value: "asdf", done: true}])}
         </div>
     );
 }

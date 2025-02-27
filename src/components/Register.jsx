@@ -26,7 +26,7 @@ export function Register() {
             },
             // mode: 'no-cors',
             body: JSON.stringify({"username": username, "password": password})
-        }).then(i => i.text())
+        }).then(i => i.json())
 
         if (response.error != null) {
             alert(response.error);
