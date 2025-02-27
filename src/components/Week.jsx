@@ -186,7 +186,7 @@ function TodoLine(index, val, done, update, addLine, remove) {
 
 export function List() {
 
-    const [complete, setComplete] = useState([false, false, false])
+    const [complete, setComplete] = useState([{text: "abc", finished: false}])
     console.log(complete)
     function toItem(index, task, done) {
         return (
@@ -197,7 +197,11 @@ export function List() {
                         padding: '3px'
                     }}
                     onClick={(event) => {
-                        setComplete(complete.map((c, i) => (i == index) ? event.target.checked : c))
+                        setComplete(
+                            complete.map((c, i) => {
+                                return (i == index) ? {finished: event.target.checked, text:c.text}: c
+                            })
+                        )
                     }}
                 />
                 <TextField
@@ -207,6 +211,11 @@ export function List() {
                     value={task}
                     className={done ? "strike" : ""}
                     onChange={(e) => {
+                        setComplete(
+                            complete.map((c, i) => {
+                                return (i == index) ? {finished: c.finished, text:e.target.value}: c
+                            })
+                        )
                     }}
                     // onKeyDown={(e) => (e.key === 'Enter') ? addLine(index) : undefined}
                 />
@@ -222,10 +231,13 @@ export function List() {
 
     return (
         <Box>
-            <Typography>
-                Todos:
-            </Typography>
-            {complete.map((_, i) => toItem(i, "abc", complete[i]))}
+            <Box sx={{display: "flex", justifyContent: "space-between"}}>
+                <Typography>
+                    Todos:
+                </Typography>
+                <Button onClick={() => setComplete([...complete, {finished: false, text: "abc"}])}>Add</Button>
+            </Box>
+            {complete.map((x, i) => toItem(i, x.text, x.finished))}
         </Box>
     )
 }
