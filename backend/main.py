@@ -11,16 +11,16 @@ so keys will be of the form:
 import json
 
 class Todo:
-    def __init__(self, text: str, done: bool, level: int):
+    def __init__(self, text: str, done: bool):
         self.text = text
         self.done = done
-        self.level = level
+        # self.level = level
     
     def fromDict(input: dict):
         return Todo(
             input["text"],
-            input["done"],
-            input["level"],
+            input["finished"],
+            # input["level"],
         )
     
     def fromJSON(input: str):
@@ -30,8 +30,8 @@ class Todo:
     def toJSON(self):
         return json.dumps({
             "text": self.text,
-            "done": self.done,
-            "level": self.level
+            "finished": self.done,
+            # "level": self.level
         })       
         
 
@@ -57,7 +57,7 @@ DB design:
         "lightmode": false
     },
     "1970-1-1": [
-        {"task": "wash dishes", "done": false}
+        {"task": "wash dishes", "finished": false}
     ]
     ...
 }
@@ -159,7 +159,8 @@ class Layer:
         # returns cookie or None for error
 
         try:
-            self.user_secret(username)["password"] = password
+            if self.user_secret(username)["password"] != password:
+                return None
         except Exception:
             return None
 
@@ -177,6 +178,7 @@ class Layer:
             return f"Invalid day: \"{day}\""
 
         user[formatted_day] = data
+        print(user)
         self.db.save()
         return None
 
@@ -300,11 +302,13 @@ def logout():
 ====== Core feature ======
 """
 @app.route("/api/update-day", methods=["POST"])
-@flask_cors.cross_origin()
+@flask_cors.cross_origin(supports_credentials=True)
 def update_day():
     whoami = layer.use_session(get_session())
-    d = date.fromisoformat(request.json["day"])
-    todos = [Todo.fromDict(i) for i in request.json["todos"]]
+    j = json.loads(request.get_data())
+    print(j)
+    d = date.fromisoformat(j["day"])
+    todos = [Todo.fromDict(i) for i in j["todos"]]
     layer.update_day(whoami, d, todos)
     return noerror()
 
