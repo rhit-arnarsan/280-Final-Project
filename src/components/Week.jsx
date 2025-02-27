@@ -11,22 +11,23 @@ class weekHolder {
     }
 
     getNextWeek() {
-        let newStart = new Date()
+        let newStart = new Date();
         newStart.setDate(this.startDate.getDate() + 7);
-        let newEnd = new Date()
+        let newEnd = new Date();
         newEnd.setDate(this.endDate.getDate() + 7);
         return new weekHolder(newStart, newEnd);
     }
 
     getNextNWeeks(n) {
-        let weeks = [];
-        let newStart = this.startDate;
-        let newEnd = this.endDate;
-        for (let i = 0; i < n; i++) {
-            newStart.setDate(newStart.getDate() + 7);
-            
+        let weeks = [this]
 
+        for (let i = 1; i < n + 1; i++) {
+            weeks[i] = this.getNextWeek(weeks[i - 1])
         }
+
+        weeks.shift()
+        console.log(weeks);
+        return weeks
     }
 
 }
@@ -44,6 +45,7 @@ function dayToWeek(day) {
 
 console.log(dayToWeek(new Date()) )
 console.log(dayToWeek(new Date()).getNextWeek())
+console.log(dayToWeek(new Date()).getNextNWeeks(9));
 
 function TodoLine(addLine) {
     const [done, setDone] = useState(true);
