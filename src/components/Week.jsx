@@ -3,17 +3,36 @@ import { useState } from 'react'
 import { Checkbox, TextField } from '@mui/material';
 
 const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-const weeks = [];
 
 class weekHolder {
     constructor(start, end) {
         this.startDate = start;
-        this.endData = end;
+        this.endDate = end;
     }
 
-    
+    getNextWeek() {
+        let newStart = new Date()
+        newStart.setDate(this.startDate.getDate() + 7);
+        let newEnd = new Date()
+        newEnd.setDate(this.endDate.getDate() + 7);
+        return new weekHolder(newStart, newEnd);
+    }
 
 }
+
+function dayToWeek(day) {
+    let start = new Date(day);
+    while (start.getDay() != 0) {
+        start.setDate(start.getDate() - 1);
+    }
+
+    let end =  new Date()
+    end.setDate(start.getDate() + 7)
+    return new weekHolder(start, end);
+}
+
+console.log(dayToWeek(new Date()) )
+console.log(dayToWeek(new Date()).getNextWeek())
 
 function TodoLine(addLine) {
     const [done, setDone] = useState(true);
