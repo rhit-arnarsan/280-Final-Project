@@ -11,11 +11,11 @@ class weekHolder {
         this.endDate = end;
     }
 
-    getNextWeek() {
+    getNthWeekOffset(n) {
         let newStart = new Date();
-        newStart.setDate(this.startDate.getDate() + 7);
+        newStart.setDate(this.startDate.getDate() + 7*n);
         let newEnd = new Date();
-        newEnd.setDate(this.endDate.getDate() + 7);
+        newEnd.setDate(this.endDate.getDate() + 7*n);
         return new weekHolder(newStart, newEnd);
     }
 
@@ -32,7 +32,7 @@ class weekHolder {
     }
 
     toListOfDays() {
-        return [0, 1, 2, 3, 4, 5, 6, 7].map(
+        return [0, 1, 2, 3, 4, 5, 6].map(
             (i) => {
                 const res = new Date();
                 res.setDate(this.startDate.getDate() + i)
@@ -59,6 +59,13 @@ class weekHolder {
         return x;
     }
 
+    getNextWeek() {
+        let newStart = new Date();
+        newStart.setDate(this.startDate.getDate() + 7);
+        let newEnd = new Date();
+        newEnd.setDate(this.endDate.getDate() + 7);
+        return new weekHolder(newStart, newEnd);
+    }
 }
 
 export function dayToWeek(day) {
@@ -172,21 +179,12 @@ function TodoLine(index, val, done, update, addLine, remove) {
 
 
 // // name is a string
-// export function Week(name, weekHolder) {
-//     weekHolder.getData();
-//     return (
-//         <div className="week">
-//             <h1 id={name}>{name}</h1>
-//             {/* {weekHolder.toListOfDays().map((day, i) => Day(days_of_week[i], day, [{value:"asdf", done: true}]))} */}
-//             {Day("TestDay", new Date(), [{value: "asdf", done: true}])}
-//         </div>
-//     );
-// }
 
 
-export function List() {
 
-    const [complete, setComplete] = useState([{text: "abc", finished: false}])
+export function Day(name) {
+
+    const [complete, setComplete] = useState([{text: "", finished: false}])
     console.log(complete)
     function toItem(index, task, done) {
         return (
@@ -231,13 +229,24 @@ export function List() {
 
     return (
         <Box>
-            <Box sx={{display: "flex", justifyContent: "space-between"}}>
+            <Box sx={{display: "flex", justifyContent: "space-between", alignItems: "center", width: "180%"}}>
                 <Typography>
-                    Todos:
+                    {name}:
                 </Typography>
-                <Button onClick={() => setComplete([...complete, {finished: false, text: "abc"}])}>Add</Button>
+                <Button onClick={() => setComplete([...complete, {finished: false, text: ""}])}>Add</Button>
             </Box>
             {complete.map((x, i) => toItem(i, x.text, x.finished))}
         </Box>
     )
+}
+
+
+export function Week(name, weekHolder) {
+    // weekHolder.getData();
+    return (
+        <div className="week">
+            <h1 id={name}>{name}</h1>
+            {weekHolder.toListOfDays().map((day, i) => Day(days_of_week[i], day))}
+        </div>
+    );
 }
