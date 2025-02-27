@@ -196,7 +196,7 @@ class Layer:
     
     def get_all_days(self, username: str) -> dict[date, Todo]:
         result = {}
-        for k, v in self.get_user(username):
+        for k, v in self.get_user(username).items():
             if k in Layer.SPECIAL_KEYS:
                 continue
             result[date.fromisoformat(k)] = Todo.fromDict(v)
@@ -239,6 +239,7 @@ app = Flask(
     static_folder='dist/')
 
 def get_session():
+    print(request.cookies)
     if "session" in request.cookies:
         return request.cookies["session"]
     raise Exception("adsf")
@@ -247,6 +248,7 @@ def quick_response(a):
     response = flask.Response(a)
     # response.headers.add('Access-Control-Allow-Origin', '*')
     response.headers.add('Content-Type', 'application/json')
+    # response.headers.add('Access-Control-Allow-Credentials', 'true')
     response.headers.add('Accept', 'application/json')
     return response
 
@@ -314,8 +316,8 @@ def get_day():
     result = layer.get_day(whoami, d)
     return noerror({"data": result})
 
-@app.route("/api/get-day-inrange", methods=["POST"])
-@flask_cors.cross_origin()
+@app.route("/api/get-days-inrange", methods=["POST"])
+@flask_cors.cross_origin(supports_credentials=True)
 def get_data_in_range():
     whoami = layer.use_session(get_session())
     start = date.fromisoformat(request.json["start"])
