@@ -2,12 +2,22 @@ import { useState } from 'react'
 
 import { Checkbox, TextField } from '@mui/material';
 
+const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const weeks = [];
 
+class weekHolder {
+    constructor(start, end) {
+        this.startDate = start;
+        this.endData = end;
+    }
 
-const days_of_week = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+    
+
+}
 
 function TodoLine(addLine) {
     const [done, setDone] = useState(true);
+    
     const input =  (
         <TextField 
         InputProps={{ disableUnderline: true }}
@@ -18,6 +28,12 @@ function TodoLine(addLine) {
         onKeyDown={ (e) => (e.key === 'Enter') ? addLine() : undefined}
         />
     );
+
+    currDate = new Date();
+    dayOfWeek = daysOfWeek[currDate.getDay()];
+    month = date.getMonth() + 1; // 0-based months
+    day = currDate.getDate();
+    year = date.getFullYear();
 
     return (
         <div className="todo-item">
@@ -34,6 +50,12 @@ function TodoLine(addLine) {
 }
 
 export function Day(name) {
+    currDate = new Date();
+    dayOfWeek = daysOfWeek[currDate.getDay()];
+    month = date.getMonth() + 1; // 0-based months
+    day = currDate.getDate();
+    year = date.getFullYear();
+
     return (
         <div>
             <p>{name}</p>
