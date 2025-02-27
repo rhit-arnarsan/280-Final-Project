@@ -125,9 +125,9 @@ class Layer:
 
     def remove_all_sessions(self, for_user: str):
         sessions = self.db.get("__sessions__")
-        for k, v in sessions.items():
-            if v["username"] == for_user:
-                del sessions[k]
+        cpy = {k:v for k, v in sessions.items() if v["username"] != for_user}
+        sessions.clear()
+        sessions.update(cpy)
 
     def _add_session(self, for_user: str, invalidate_other_user_sessions: bool = True, lasts: timedelta = timedelta(hours=1)) -> str:
         sessions = self.db.get("__sessions__")
@@ -282,9 +282,12 @@ def register():
 @app.route("/api/logout", methods=["POST"])
 @flask_cors.cross_origin()
 def logout():
-    whoami = layer.use_session(request.cookies["session"])
-    layer.remove_all_sessions(whoami)
-    return noerror()
+    try:
+        whoami = layer.use_session(get_session())
+        layer.remove_all_sessions(whoami)
+        return noerror()
+    except Exception:
+        return noerror()
 
 """
 ====== Core feature ======
@@ -292,7 +295,7 @@ def logout():
 @app.route("/api/update-day", methods=["POST"])
 @flask_cors.cross_origin()
 def update_day():
-    whoami = layer.use_session(request.cookies["session"])
+    whoami = layer.use_session(get_session())
     d = date.fromisoformat(request.json["day"])
     todos = [Todo.fromDict(i) for i in request.json["todos"]]
     layer.update_day(whoami, d, todos)
@@ -301,7 +304,7 @@ def update_day():
 @app.route("/api/get-day", methods=["POST"])
 @flask_cors.cross_origin()
 def get_day():
-    whoami = layer.use_session(request.cookies["session"])
+    whoami = layer.use_session(get_session())
     d = date.fromisoformat(request.json["day"])
     result = layer.get_day(whoami, d)
     return noerror({"data": result})
@@ -309,7 +312,7 @@ def get_day():
 @app.route("/api/get-day-inrange", methods=["POST"])
 @flask_cors.cross_origin()
 def get_data_in_range():
-    whoami = layer.use_session(request.cookies["session"])
+    whoami = layer.use_session(get_session())
     start = date.fromisoformat(request.json["start"])
     end   = date.fromisoformat(request.json["end"])
     result = {k:v for k, v in layer.get_all_days(whoami).items() if start <= k < end}
@@ -321,14 +324,14 @@ def get_data_in_range():
 @app.route("/api/get-settings", methods=["POST"])
 @flask_cors.cross_origin()
 def get_settings():
-    whoami = layer.use_session(request.cookies["session"])
+    whoami = layer.use_session(get_session())
     layer.user_settings(whoami)
     return noerror({"data": layer})
 
 @app.route("/api/update-settings", methods=["POST"])
 @flask_cors.cross_origin()
 def update_settings():
-    whoami = layer.use_session(request.cookies["session"])
+    whoami = layer.use_session(get_session())
     assert("error" not in request.json)
     layer.user_settings(whoami).update(request.json)
     return noerror()
