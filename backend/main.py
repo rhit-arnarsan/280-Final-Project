@@ -121,6 +121,7 @@ class Layer:
                 "password": password,
             }
         })
+        self.db.save()
         return None if success else "Failed to write to DB"
 
     def remove_all_sessions(self, for_user: str):
@@ -128,6 +129,7 @@ class Layer:
         cpy = {k:v for k, v in sessions.items() if v["username"] != for_user}
         sessions.clear()
         sessions.update(cpy)
+        self.db.save()
 
     def _add_session(self, for_user: str, invalidate_other_user_sessions: bool = True, lasts: timedelta = timedelta(hours=1)) -> str:
         sessions = self.db.get("__sessions__")
@@ -162,7 +164,9 @@ class Layer:
             return None
 
         # create session
-        return self._add_session(username)
+        res = self._add_session(username)
+        self.db.save()
+        return res
 
     def update_day(self, username: str, day: str, data: list[Todo]) -> str | None:
         " returns None if no error otherwise string"
@@ -173,6 +177,7 @@ class Layer:
             return f"Invalid day: \"{day}\""
 
         user[formatted_day] = data
+        self.db.save()
         return None
 
     def get_day(self, username: str, day: str) -> Todo:
