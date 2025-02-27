@@ -8,13 +8,16 @@ import { Main } from './pages/Main.jsx';
 
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/todos" element={<Main />} />
-      </Routes>
-    </BrowserRouter>
+    <div id="wrapper">
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Login />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/todos" element={<Main />} />
+        </Routes>
+      </BrowserRouter>
+    </div>
   )
 }
 
