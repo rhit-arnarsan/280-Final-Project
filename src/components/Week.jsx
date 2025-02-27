@@ -30,6 +30,27 @@ class weekHolder {
         return weeks
     }
 
+    toListOfDays() {
+        return [0,1,2,3,4,5,6,7].map(
+            (i) => {
+                const res = new Date();
+                res.setDate(this.startDate.getDate()+ i)
+                return res;
+            }
+        )
+    }
+
+    async getData() {
+        const x = await fetch("http://localhost:5000/api/get-days-inrange", {
+            body: JSON.stringify({
+                startDate: this.startDate.toISOString(),
+                endDate: this.endDate.toISOString(),
+            }),
+
+        }).then((i) => i.json());
+        console.log(x);
+    }
+
 }
 
 function dayToWeek(day) {
@@ -46,6 +67,8 @@ function dayToWeek(day) {
 console.log(dayToWeek(new Date()) )
 console.log(dayToWeek(new Date()).getNextWeek())
 console.log(dayToWeek(new Date()).getNextNWeeks(9));
+console.log(dayToWeek(new Date()).toListOfDays())
+
 
 function TodoLine(addLine) {
     const [done, setDone] = useState(true);
@@ -115,7 +138,7 @@ export function Week(name) {
     return (
         <div className="week">
             <h1 id={name}>{name}</h1>
-            {days_of_week.map((i) => Day(i))}
+            {/* {days_of_week.map((i) => Day(i))} */}
         </div>
     );
 }
