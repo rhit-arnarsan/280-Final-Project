@@ -35,7 +35,7 @@ export function TopBar() {
         <AppBar>
             <Toolbar sx={{ width: "100%", "boxSizing": "content-box" }}>
                 <Typography variant="h5">
-                    Todo
+                    TODO List Manager
                 </Typography>
 
                 <Box sx={{ float: "right" }}>
