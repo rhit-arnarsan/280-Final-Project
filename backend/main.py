@@ -220,6 +220,7 @@ cookie which serves as the user identifier
 """
 
 import flask
+import flask_cors
 from flask import Flask, request
 
 
@@ -233,7 +234,10 @@ def noerror(other_info: dict = {}):
     return error(None, other_info)
 
 layer = Layer("temp.db")
-app = Flask(__name__)
+app = Flask(
+    __name__,
+    static_url_path='/', # correct
+    static_folder='dist/')
 
 """
 ====== Login Related ======
@@ -248,12 +252,18 @@ def login():
     return noerror({"cookie": res})
 
 @app.route("/api/register", methods=["POST"])
+@flask_cors.cross_origin()
 def register():
-    j = request.json
+    j = json.loads(request.get_data())
     res = layer.register(j["username"], j["password"])
     if res != None:
-        return error(res)
-    return noerror()
+        response = flask.Response(res, mimetype="application/json")
+    else:
+        response = flask.Response(noerror())
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers.add('Content-Type', 'application/json')
+    response.headers.add('Accept', 'application/json')
+    return noerror() 
 
 @app.route("/api/logout", methods=["POST"])
 def logout():
@@ -304,8 +314,12 @@ def update_settings():
     return noerror()
 
 
+@app.route("/<any>", methods=["GET"])
+def serve_files(any):
+    return open("dist/index.html").read()
 
 
 
 
-app.run(debug=False)
+
+app.run(debug=True)
