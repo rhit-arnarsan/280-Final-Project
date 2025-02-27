@@ -1,7 +1,7 @@
 :root {
   --radius: 20px;
-  --light-bg: #eee;
-  --light-accent: #ddd;
+  --light-bg: #fff;
+  --light-accent: #eee;
 
 
   --bg: var(--bg);

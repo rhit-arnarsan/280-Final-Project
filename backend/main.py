@@ -9,6 +9,7 @@ so keys will be of the form:
 """
 
 import json
+import sys
 
 class Todo:
     def __init__(self, text: str, done: bool):
@@ -187,17 +188,20 @@ class Layer:
 
     def get_day(self, username: str, day: str) -> Todo:
         try:
-            formatted_day = date.fromisoformat(day).isoformat()
+            formatted_day = day.isoformat()
         except Exception:
-            return f"Invalid day: \"{day}\""
+            return "Invalid day: \"{day}\""
         
-        try:
-            todo = Todo.fromJSON(self.get_user(username)[formatted_day])
-        except NoSuchUser as nsu:
-            raise nsu
-        except Exception:
-            return f"Invalid TODO data"
-        return todo
+        todos = self.get_user(username)[formatted_day]
+        print("-----", todos)
+        # try:
+        #     # todos = [Todo.fromDict(i) for i in todos]
+        # except NoSuchUser as nsu:
+        #     raise nsu
+        # except Exception:
+        #     # raise Exception(f"Invalid TODO data, {self.get_user(username)[formatted_day]}")
+        #     sys.exit(1)
+        return todos
     
     def get_all_days(self, username: str) -> dict[date, Todo]:
         result = {}

@@ -1,5 +1,5 @@
 
-import { Week, Day, dayToWeek } from '../components/Week.jsx';
+import { Week, Day, dayToWeek, updateDay, getDay } from '../components/Week.jsx';
 import { TopBar } from '../components/TopBar.jsx';
 
 function weekNames(offset) {
@@ -14,10 +14,10 @@ function weekNames(offset) {
 
 export function Main() {
     const currentWeek = dayToWeek(new Date());
-    const BACK = -3;
+    const BACK = -1;
 
     const weeks = []
-    for (let i = BACK; i < 4; i++) {
+    for (let i = BACK; i < 3; i++) {
         weeks.push(currentWeek.getNthWeekOffset(i));
     }
 
