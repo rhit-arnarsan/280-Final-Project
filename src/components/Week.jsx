@@ -18,6 +18,17 @@ class weekHolder {
         return new weekHolder(newStart, newEnd);
     }
 
+    getNextNWeeks(n) {
+        let weeks = [];
+        let newStart = this.startDate;
+        let newEnd = this.endDate;
+        for (let i = 0; i < n; i++) {
+            newStart.setDate(newStart.getDate() + 7);
+            
+
+        }
+    }
+
 }
 
 function dayToWeek(day) {
